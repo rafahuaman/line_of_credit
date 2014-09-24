@@ -1,11 +1,8 @@
 class LineOfCredit
-  attr_reader :apr, :max_limit, :balance, :clock, :datetime_created, :period_transactions, :owed_interest
+  attr_reader :apr, :max_limit, :balance, :clock, :datetime_created, :transaction_repo, :owed_interest
   SUCCESS_MESSAGE = "SUCCESS"
   ERROR_MESSAGE_MAX_CREDIT_REACHED = "ERROR CREDIT LIMIT REACHED"
   ERROR_CANNOT_CHARGE_BEFORE_30_DAY_PERIOD = "ERROR -  Interest can only be charged at the end of the closing 30 day period."
-  WITHDRAWAL = "W"
-  PAYMENT = "P"
-  BEGINNING_PERIOD_BALANCE = "B"
 
   def initialize(limit, apr, clock)
     @max_limit = limit
@@ -13,7 +10,7 @@ class LineOfCredit
     @balance = 0
     @clock = clock
     @datetime_created = @clock.get_datetime
-    @period_transactions = []
+    @transaction_repo = TransactionRepo.new
     @owed_interest = 0 
   end
 
@@ -22,14 +19,14 @@ class LineOfCredit
       ERROR_MESSAGE_MAX_CREDIT_REACHED
     else
       @balance += amount
-      @period_transactions << record_withdrawal(amount)
+      @transaction_repo.record_withdrawal(amount, @clock.get_datetime)
       SUCCESS_MESSAGE
     end
   end
 
   def pay(amount)
     @balance -= amount
-    @period_transactions << record_payment(amount)
+    @transaction_repo.record_payment(amount, @clock.get_datetime)
     SUCCESS_MESSAGE
   end
 
@@ -52,17 +49,17 @@ class LineOfCredit
 
   def calculate_interest
     balance_tracker = balance
-    interest = 0
+    calculated_interest = 0
     last_transaction_date = clock.get_datetime.to_date 
-    @period_transactions.reverse_each do |transaction|
+    @transaction_repo.transactions.reverse_each do |transaction|
       days_with_balance = last_transaction_date - transaction[:date_time].to_date
-      interest+= balance_tracker*@apr/365*days_with_balance
+      calculated_interest+= balance_tracker*@apr/365*days_with_balance
       balance_tracker -= transaction[:amount]
       last_transaction_date = transaction[:date_time].to_date
     end
-    @owed_interest += interest
-    @period_transactions.clear
-    @period_transactions << record_beginning_balance(balance)
+    @owed_interest += calculated_interest
+    @transaction_repo.reset
+    @transaction_repo.record_beginning_balance(balance, @clock.get_datetime)
   end
 
   def total_payoff
@@ -72,25 +69,5 @@ class LineOfCredit
   private
     def has_enough_funds? (amount)
       amount > remaining_limit
-    end
-
-    def record_withdrawal(amount)
-      record_activity(WITHDRAWAL, amount)
-    end
-
-    def record_payment(amount)
-      record_activity(PAYMENT, -amount)
-    end
-
-    def record_beginning_balance(amount)
-      record_activity(BEGINNING_PERIOD_BALANCE,amount)
-    end
-
-    def record_activity(activity,amount)
-      record = {}
-      record[:action] = activity
-      record[:amount] = amount
-      record[:date_time] = @clock.get_datetime
-      record
     end
 end

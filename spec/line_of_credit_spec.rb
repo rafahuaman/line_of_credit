@@ -31,9 +31,9 @@ RSpec.describe LineOfCredit do
 
     it "records the transaction" do
       line_of_credit.draw(500) 
-      expect(line_of_credit.period_transactions[0][:action]).to eq "W"
-      expect(line_of_credit.period_transactions[0][:amount]).to eq 500
-      expect(line_of_credit.period_transactions[0][:date_time]).to  eq test_time
+      expect(line_of_credit.transaction_repo.transactions[0][:action]).to eq "W"
+      expect(line_of_credit.transaction_repo.transactions[0][:amount]).to eq 500
+      expect(line_of_credit.transaction_repo.transactions[0][:date_time]).to  eq test_time
     end
   end
 
@@ -50,9 +50,9 @@ RSpec.describe LineOfCredit do
 
     it "records the transaction" do
       line_of_credit.pay(500) 
-      expect(line_of_credit.period_transactions[1][:action]).to eq "P"
-      expect(line_of_credit.period_transactions[1][:amount]).to eq(-500)
-      expect(line_of_credit.period_transactions[1][:date_time]).to  eq test_time
+      expect(line_of_credit.transaction_repo.transactions[1][:action]).to eq "P"
+      expect(line_of_credit.transaction_repo.transactions[1][:amount]).to eq(-500)
+      expect(line_of_credit.transaction_repo.transactions[1][:date_time]).to  eq test_time
     end
   end
 
