@@ -3,6 +3,7 @@ class LineOfCredit
   SUCCESS_MESSAGE = "SUCCESS"
   ERROR_MESSAGE_MAX_CREDIT_REACHED = "ERROR CREDIT LIMIT REACHED"
   ERROR_CANNOT_CHARGE_BEFORE_30_DAY_PERIOD = "ERROR -  Interest can only be charged at the end of the closing 30 day period."
+  PERIOD_LENGTH =30
 
   def initialize(limit, apr, clock)
     @max_limit = limit
@@ -39,7 +40,7 @@ class LineOfCredit
   end
 
   def charge_interest
-    if (clock.get_datetime.to_date - date_created)%30 == 0 and clock.get_datetime.to_date - date_created !=0
+    if period_close?
       calculate_interest
       SUCCESS_MESSAGE
     else
@@ -69,5 +70,9 @@ class LineOfCredit
   private
     def has_enough_funds? (amount)
       amount > remaining_limit
+    end
+
+    def period_close?
+      (clock.get_datetime.to_date - date_created)%PERIOD_LENGTH == 0 and clock.get_datetime.to_date - date_created !=0
     end
 end
